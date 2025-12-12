@@ -1,160 +1,157 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🚚 Поставщики | Автоматизация Поставок</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <style>
-        .card-header-primary { background-color: #007bff; color: white; }
-    </style>
-</head>
-<body class="bg-light">
+<!-- templates/suppliers.html -->
+{% extends 'base.html' %}
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold" href="{% url 'index' %}">
-            <i class="bi bi-house-door-fill me-2"></i>Hotel Supply Automation
-        </a>
+{% block title %}Поставщики - Автоматизация Поставок{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2"><i class="bi bi-truck me-2"></i>Наши Поставщики</h1>
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
+        <i class="bi bi-plus-circle me-2"></i>Добавить поставщика
+    </button>
+</div>
+
+<!-- Таблица поставщиков -->
+<div class="card shadow-sm">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0"><i class="bi bi-buildings me-2"></i>Список поставщиков</h5>
     </div>
-</nav>
-
-<div class="container mt-5">
-    <header class="mb-5 d-flex justify-content-between align-items-center">
-        <h1 class="display-6 fw-bold text-dark">🤝 Наши Поставщики</h1>
-        
-        <button type="button" class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#addSupplierModal">
-            <i class="bi bi-plus-circle-fill me-2"></i>Добавить нового
-        </button>
-    </header>
-
-    <div class="card shadow-lg mb-5">
-        <div class="card-header card-header-primary fw-bold">
-            <i class="bi bi-list-task me-2"></i> Актуальный список контрагентов
-        </div>
-        <div class="card-body">
-            <table id="suppliersTable" class="table table-hover align-middle">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
                 <thead class="table-light">
                     <tr>
-                        <th scope="col">Имя поставщика</th>
-                        <th scope="col">Специализация (Пример)</th>
-                        <th scope="col">Контакты</th>
+                        <th>#</th>
+                        <th>Название компании</th>
+                        <th>Контактный телефон</th>
+                        <th>Адрес</th>
+                        <th>Кол-во поставок</th>
+                        <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
-                    </tbody>
+                    {% for supplier in suppliers %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            <strong>{{ supplier.name }}</strong>
+                        </td>
+                        <td>
+                            {% if supplier.phone %}
+                                <i class="bi bi-telephone text-success me-1"></i>{{ supplier.phone }}
+                            {% else %}
+                                <span class="text-muted">Не указан</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if supplier.address %}
+                                {{ supplier.address|truncatechars:50 }}
+                            {% else %}
+                                <span class="text-muted">Не указан</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-info">{{ supplier.supply_set.count }}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#editSupplierModal{{ supplier.id }}">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form method="POST" action="{% url 'delete_supplier' supplier.id %}" 
+                                      class="d-inline" onsubmit="return confirm('Удалить поставщика?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <!-- Модальное окно редактирования -->
+                            <div class="modal fade" id="editSupplierModal{{ supplier.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title">Редактировать поставщика</h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form method="POST" action="{% url 'edit_supplier' supplier.id %}">
+                                            {% csrf_token %}
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Название компании</label>
+                                                    <input type="text" class="form-control" name="name" 
+                                                           value="{{ supplier.name }}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Телефон</label>
+                                                    <input type="text" class="form-control" name="phone" 
+                                                           value="{{ supplier.phone|default_if_none:'' }}">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Адрес</label>
+                                                    <textarea class="form-control" name="address" rows="3">{{ supplier.address|default_if_none:'' }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                <button type="submit" class="btn btn-primary">Сохранить</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-truck fs-1"></i>
+                            <p class="mt-2">Нет поставщиков. Добавьте первого!</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="addSupplierModal" tabindex="-1" aria-labelledby="addSupplierModalLabel" aria-hidden="true">
+<!-- Модальное окно добавления поставщика -->
+<div class="modal fade" id="addSupplierModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header bg-success text-white">
-                <h5 class="modal-title" id="addSupplierModalLabel">Добавить нового поставщика</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Добавить нового поставщика</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
-                <form id="addSupplierForm">
+            <form method="POST" action="{% url 'add_supplier' %}">
+                {% csrf_token %}
+                <div class="modal-body">
                     <div class="mb-3">
-                        <label for="supplierName" class="form-label">Название компании</label>
-                        <input type="text" class="form-control" id="supplierName" required>
+                        <label class="form-label">Название компании *</label>
+                        <input type="text" class="form-control" name="name" required>
                     </div>
                     <div class="mb-3">
-                        <label for="supplierSpecialty" class="form-label">Специализация</label>
-                        <input type="text" class="form-control" id="supplierSpecialty" placeholder="Например: Овощи, Молочные продукты">
+                        <label class="form-label">Телефон</label>
+                        <input type="text" class="form-control" name="phone" 
+                               placeholder="+7 (XXX) XXX-XX-XX">
                     </div>
                     <div class="mb-3">
-                        <label for="supplierContact" class="form-label">Телефон/Email</label>
-                        <input type="text" class="form-control" id="supplierContact" placeholder="+7 (XXX) XXX-XX-XX">
+                        <label class="form-label">Адрес</label>
+                        <textarea class="form-control" name="address" rows="3" 
+                                  placeholder="Полный адрес поставщика"></textarea>
                     </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="submit" form="addSupplierForm" class="btn btn-success">Сохранить</button>
-            </div>
+                    <div class="form-text">* - обязательное поле</div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success">Добавить</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
-
-
-<script>
-// --- Хелперы для работы с LocalStorage ---
-const STORAGE_KEY_SUPPLIERS = "suppliers";
-
-function getSuppliers() { 
-    return JSON.parse(localStorage.getItem(STORAGE_KEY_SUPPLIERS) || "[]"); 
-}
-
-function setSuppliers(suppliers) {
-    localStorage.setItem(STORAGE_KEY_SUPPLIERS, JSON.stringify(suppliers));
-}
-
-// --- Функциональность добавления ---
-function addSupplier(name, specialty, contact) {
-    let suppliers = getSuppliers();
-    const newSupplier = { 
-        name: name, 
-        specialty: specialty || 'Не указана', 
-        contact: contact || 'Не указан' 
-    };
-    suppliers.push(newSupplier);
-    setSuppliers(suppliers);
-    renderSuppliersTable(); // Перерисовать таблицу
-    // Закрыть модальное окно (требует BS JS)
-    const modalElement = document.getElementById('addSupplierModal');
-    if (modalElement) {
-        bootstrap.Modal.getInstance(modalElement)?.hide();
-    }
-}
-
-// --- Рендеринг Таблицы ---
-function renderSuppliersTable() {
-    let tbody = document.querySelector("#suppliersTable tbody");
-    tbody.innerHTML = "";
-    
-    // Начальные данные, если LocalStorage пуст
-    if (getSuppliers().length === 0) {
-        setSuppliers([
-            { name: "Молочный Дом", specialty: "Молочные продукты, Сыры", contact: "+7 (495) 123-45-67" },
-            { name: "Мясная Лавка №1", specialty: "Мясо и птица", contact: "sales@meat.ru" },
-            { name: "Овощной Мир", specialty: "Свежие овощи и фрукты", contact: "+7 (916) 000-11-22" }
-        ]);
-    }
-    
-    getSuppliers().forEach(s => {
-        let tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td><i class="bi bi-building me-2 text-primary"></i>${s.name}</td>
-            <td>${s.specialty}</td>
-            <td><i class="bi bi-telephone me-1 text-success"></i>${s.contact}</td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
-// --- Инициализация и обработка формы ---
-document.addEventListener("DOMContentLoaded", function(){
-    renderSuppliersTable();
-    
-    const form = document.getElementById('addSupplierForm');
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const name = document.getElementById('supplierName').value.trim();
-        const specialty = document.getElementById('supplierSpecialty').value.trim();
-        const contact = document.getElementById('supplierContact').value.trim();
-        
-        if (name) {
-            addSupplier(name, specialty, contact);
-            form.reset(); // Очистить форму после добавления
-        }
-    });
-});
-</script>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

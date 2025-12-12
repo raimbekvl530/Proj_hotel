@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Панель управления</title>
+</head>
+<body>
+    <h2>Панель управления</h2>
+    
+    {% if user.is_authenticated %}
+        <p>Добро пожаловать, {{ user.username }}!</p>
+        <p>Ваша роль: 
+            {% if user.is_superuser %}
+                Администратор
+            {% elif user.groups.all.0.name %}
+                {{ user.groups.all.0.name }}
+            {% else %}
+                Пользователь
+            {% endif %}
+        </p>
+        
+        <h3>Меню:</h3>
+        <ul>
+            <li><a href="{% url 'index' %}">Главная</a></li>
+            <li><a href="{% url 'sklad' %}">Склад</a></li>
+            <li><a href="{% url 'suppliers' %}">Поставщики</a></li>
+            <li><a href="{% url 'supply' %}">Поставки</a></li>
+            <li><a href="{% url 'logout' %}">Выйти</a></li>
+        </ul>
+    {% else %}
+        <p>Вы не авторизованы.</p>
+        <a href="{% url 'login' %}">Войти</a>
+        <a href="{% url 'register' %}">Регистрация</a>
+    {% endif %}
+</body>
+</html>
